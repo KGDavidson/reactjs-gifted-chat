@@ -77,13 +77,12 @@ interface GiftedChatProps {
     style: {},
     onClick: (e)=>void,
     disabled: boolean,
-    id: string,
     children: string | JSX.Element | JSX.Element[]
   })=> JSX.Element,
   placeholder: string,
   text: string,
   onInputTextChanged: (e)=>void,
-  renderInputToolbar: (args: {
+  renderComposer: (args: {
     value: string,
     onChange: (e) => void,
     onKeyUp: (e)=>void,
@@ -91,6 +90,12 @@ interface GiftedChatProps {
     maxLength: number,
     style: {}
   })=> JSX.Element,
+  renderInputToolbar: (
+    args: {
+      style: {},
+    },
+    children: JSX.Element[] | JSX.Element | string
+  )=>JSX.Element,
   textInputStyle: {},
   sendButtonStyle: {},
   sendButtonDisabledStyle: {},
@@ -114,7 +119,7 @@ export default class GiftedChat extends Component<GiftedChatProps> {
     isTyping: false,
     alwaysShowSend: false,
     renderSend: null,
-    renderInputToolbar: null,
+    renderComposer: null,
     textInputStyle: {},
     placeholder: 'Enter your message',
     renderAvatarOnTop: false,
@@ -253,6 +258,7 @@ export default class GiftedChat extends Component<GiftedChatProps> {
       placeholder,
       text,
       onInputTextChanged,
+      renderComposer,
       renderInputToolbar,
       textInputStyle,
       sendButtonStyle,
@@ -276,6 +282,7 @@ export default class GiftedChat extends Component<GiftedChatProps> {
         alwaysShowSend={alwaysShowSend}
         renderSend={renderSend}
         placeholder={placeholder}
+        renderComposer={renderComposer}
         renderInputToolbar={renderInputToolbar}
         textInputStyle={textInputStyle}
         text={text}
