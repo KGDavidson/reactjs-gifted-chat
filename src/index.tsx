@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, {Component, CSSProperties, createRef} from 'react'
 import ChatBubble from './ChatBubble'
 import ChatInput from './ChatInput'
 import { v4 as uuidv4 } from 'uuid'
@@ -27,11 +27,123 @@ const styles = {
   }
 }
 
+export interface User {
+  _id: string | number
+  name?: string
+  avatar?: string | number | ((e: any) => JSX.Element)
+}
+
+export interface Message {
+  _id: string | number
+  text: string
+  createdAt: Date | number
+  user: User
+  image?: string
+  video?: string
+  audio?: string
+  system?: boolean
+  sent?: boolean
+  received?: boolean
+  pending?: boolean
+}
+
+interface GiftedChatProps {
+  user: {
+    _id: string | number,
+    name: string
+  },
+  loadEarlier: boolean,
+  onLoadEarlier: ()=>void;
+  inverted: boolean,
+  renderAvatarOnTop: boolean,
+  showAvatarForEveryMessage: boolean,
+  showUserAvatar: boolean,
+  showReceipientAvatar: boolean,
+  avatarSize: number,
+  onPressAvatar: null | ((e)=>void),
+  onPressBubble: null | ((e)=>void),
+  timezone,
+  timeFormat: string,
+  dateFormat: string,
+  textStyle: {},
+  imageStyle: {},
+  timeStyle: {},
+  dateStyle: {},
+  tickStyle: {},
+  hasInputField: boolean,
+  onSend: (message)=>void,
+  alwaysShowSend: boolean,
+  renderSend: (args: {
+    style: {},
+    onClick: (e)=>void,
+    disabled: boolean,
+    id: string,
+    children: string | JSX.Element | JSX.Element[]
+  })=> JSX.Element,
+  placeholder: string,
+  text: string,
+  onInputTextChanged: (e)=>void,
+  renderInputToolbar: (args: {
+    value: string,
+    onChange: (e) => void,
+    onKeyUp: (e)=>void,
+    placeholder: string,
+    maxLength: number,
+    style: {}
+  })=> JSX.Element,
+  textInputStyle: {},
+  sendButtonStyle: {},
+  sendButtonDisabledStyle: {},
+  maxInputLength: number,
+  messageIdGenerator: (message?) => string,
+  isTyping: boolean, 
+  isLoadingEarlier: boolean,
+  messages: Message[], 
+  maxHeight: number,
+  renderAccessory: ()=> JSX.Element,
+  renderChatEmpty: ()=> JSX.Element
+}
+
 // React component to render a complete chat feed
-export default class GiftedChat extends React.Component {
+export default class GiftedChat extends Component<GiftedChatProps> {
+  static defaultProps = {
+    inverted: true,
+    hasInputField: true,
+    loadEarlier: false,
+    isLoadingEarlier: false,
+    isTyping: false,
+    alwaysShowSend: false,
+    renderSend: null,
+    renderInputToolbar: null,
+    textInputStyle: {},
+    placeholder: 'Enter your message',
+    renderAvatarOnTop: false,
+    showAvatarForEveryMessage: false,
+    showUserAvatar: false,
+    onPressAvatar: null,
+    onPressBubble: null,
+    showReceipientAvatar: true,
+    avatarSize: 50,
+    messageIdGenerator: uuidv4,
+    timezone: moment.tz.guess(),
+    timeFormat: 'LT',
+    dateFormat: 'll',
+    textStyle: {},
+    imageStyle: {},
+    timeStyle: {},
+    dateStyle: {},
+    tickStyle: {},
+    sendButtonStyle: {},
+    sendButtonDisabledStyle: {},
+    renderChatEmpty: null
+  }
+
+  private chat: React.RefObject<HTMLDivElement>;
+
   constructor(props) {
     super(props)
     this.handleScroll = this.handleScroll.bind(this)
+    this.chat = createRef();
   }
 
   componentDidMount() {
@@ -51,13 +163,14 @@ export default class GiftedChat extends React.Component {
   }
 
   scrollToBottom() {
-    const scrollHeight = this.chat.scrollHeight
-    const height = this.chat.clientHeight
+    if (!this.chat.current) return;
+    const scrollHeight = this.chat.current.scrollHeight
+    const height = this.chat.current.clientHeight
     const maxScrollTop = scrollHeight - height
-    this.chat.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0
+    this.chat.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0
   }
 
-  renderMessages(messages) {
+  renderMessages(messages: any[]) {
     const {
       user,
       inverted,
@@ -78,7 +191,7 @@ export default class GiftedChat extends React.Component {
       tickStyle
     } = this.props
 
-    const messageNodes = []
+    const messageNodes: JSX.Element[] = []
     const lastMessageIndex = messages.length - 1
     for (let actualIndex = 0; actualIndex < messages.length; actualIndex++) {
       let message, prev, next
@@ -136,11 +249,11 @@ export default class GiftedChat extends React.Component {
       onSend,
       user,
       alwaysShowSend,
-      sendButtonText,
+      renderSend,
       placeholder,
       text,
       onInputTextChanged,
-      renderTextInput,
+      renderInputToolbar,
       textInputStyle,
       sendButtonStyle,
       sendButtonDisabledStyle,
@@ -151,7 +264,7 @@ export default class GiftedChat extends React.Component {
     return hasInputField
       ? (
       <ChatInput
-        onSend={newText => {
+        onSend={(newText) => {
           const message = {
             _id: messageIdGenerator(),
             text: newText,
@@ -161,9 +274,9 @@ export default class GiftedChat extends React.Component {
           onSend(message)
         }}
         alwaysShowSend={alwaysShowSend}
-        sendButtonText={sendButtonText}
+        renderSend={renderSend}
         placeholder={placeholder}
-        renderTextInput={renderTextInput}
+        renderInputToolbar={renderInputToolbar}
         textInputStyle={textInputStyle}
         text={text}
         onInputTextChanged={onInputTextChanged}
@@ -177,7 +290,7 @@ export default class GiftedChat extends React.Component {
 
   renderTyping() {
     return (
-      <div style={styles.typingWrapper}>
+      <div style={styles.typingWrapper as CSSProperties}>
         <div id="wave">
           <span className="dot" />
           <span className="dot" />
@@ -191,13 +304,11 @@ export default class GiftedChat extends React.Component {
     const { isTyping, isLoadingEarlier, messages, maxHeight, renderAccessory, renderChatEmpty } = this.props
     const chatHistoryStyle = Object.assign({ maxHeight }, styles.chatHistory)
     return (
-      <div id="chat-panel" style={styles.chatPanel} onScroll={this.handleScroll}>
+      <div id="chat-panel" style={styles.chatPanel as CSSProperties} onScroll={this.handleScroll}>
         <div
-          ref={c => {
-            this.chat = c
-          }}
+          ref={this.chat}
           className="chat-history"
-          style={chatHistoryStyle}
+          style={chatHistoryStyle as CSSProperties}
         >
           {isLoadingEarlier && (
             <div className="loader-container">
@@ -215,34 +326,4 @@ export default class GiftedChat extends React.Component {
   }
 }
 
-GiftedChat.defaultProps = {
-  inverted: true,
-  hasInputField: true,
-  loadEarlier: false,
-  isLoadingEarlier: false,
-  isTyping: false,
-  alwaysShowSend: false,
-  sendButtonText: 'SEND',
-  renderTextInput: null,
-  textInputStyle: {},
-  placeholder: 'Enter your message',
-  renderAvatarOnTop: false,
-  showAvatarForEveryMessage: false,
-  showUserAvatar: false,
-  onPressAvatar: null,
-  onPressBubble: null,
-  showReceipientAvatar: true,
-  avatarSize: 50,
-  messageIdGenerator: uuidv4,
-  timezone: moment.tz.guess(),
-  timeFormat: 'LT',
-  dateFormat: 'll',
-  textStyle: {},
-  imageStyle: {},
-  timeStyle: {},
-  dateStyle: {},
-  tickStyle: {},
-  sendButtonStyle: {},
-  sendButtonDisabledStyle: {},
-  renderChatEmpty: null
-}
+

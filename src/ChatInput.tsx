@@ -1,4 +1,4 @@
-import * as React from 'react'
+import  React, {CSSProperties} from 'react'
 
 const styles = {
   chatInput: {
@@ -21,7 +21,35 @@ const styles = {
   }
 }
 
-export default class ChatInput extends React.Component {
+
+interface ChatInputProps {
+  renderSend: (args: {
+    style: {},
+    onClick: (e)=>void,
+    disabled: boolean,
+    id: string,
+    children: string | JSX.Element | JSX.Element[]
+})=> JSX.Element,
+  placeholder: string,
+  renderInputToolbar: (args: {
+    value: string,
+    style: {},
+    placeholder: string,
+    maxLength: number,
+    onChange: (e) => void,
+    onKeyUp: (e)=>void,
+  }) => JSX.Element,
+  textInputStyle: {},
+  text: string,
+  onInputTextChanged: (e)=>void,
+  sendButtonStyle: {},
+  sendButtonDisabledStyle: {},
+  maxInputLength: number, 
+  onSend: (message)=>void, 
+  alwaysShowSend: boolean
+}
+
+export default class ChatInput extends React.Component<ChatInputProps, {message}> {
   constructor(props) {
     super(props)
     this.onSend = this.onSend.bind(this)
@@ -50,9 +78,9 @@ export default class ChatInput extends React.Component {
   render() {
     const {
       alwaysShowSend,
-      sendButtonText,
+      renderSend,
       placeholder,
-      renderTextInput,
+      renderInputToolbar,
       textInputStyle,
       text,
       onInputTextChanged,
@@ -65,7 +93,7 @@ export default class ChatInput extends React.Component {
     const inputStyle = Object.assign({}, styles.inputStyle, textInputStyle)
     const buttonDisabled = !alwaysShowSend && messageToUse.trim().length === 0
     const buttonStyle = Object.assign({}, styles.sendButton, sendButtonStyle, buttonDisabled ? sendButtonDisabledStyle : {})
-    const textInputProps = {
+    const inputToolbarProps = {
       value: messageToUse,
       onChange: event => {
         if (text != null) {
@@ -79,12 +107,22 @@ export default class ChatInput extends React.Component {
       maxLength: maxInputLength,
       style: inputStyle
     }
+    const sendButtonProps = {
+      style: buttonStyle,
+      onClick: this.onSend,
+      disabled: buttonDisabled,
+      id: 'chat_input_send_button',
+      children: 'Send'
+    }
     return (
-      <div className="chat-input" style={styles.chatInput}>
-        {renderTextInput != null ? renderTextInput(textInputProps) : <textarea {...textInputProps} />}
-        <button id="chat_input_send_button" type="submit" style={buttonStyle} onClick={this.onSend} disabled={buttonDisabled}>
-          {sendButtonText}
-        </button>
+      <div className="chat-input" style={styles.chatInput as CSSProperties}>
+        {renderInputToolbar
+          ? renderInputToolbar(inputToolbarProps)
+          : <textarea {...inputToolbarProps} />}
+        {renderSend
+          ? renderSend(sendButtonProps)
+          : <button type="submit" {...sendButtonProps}/>
+  }
       </div>
     )
   }

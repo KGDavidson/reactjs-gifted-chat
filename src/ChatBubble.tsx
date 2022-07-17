@@ -1,8 +1,9 @@
-import * as React from 'react'
+import React, {CSSProperties} from 'react'
 import Linkify from 'react-linkify'
 import initials from 'initials'
 import moment from 'moment-timezone'
 import { get } from 'lodash'
+import { Message } from '.'
 
 function Check() {
   return (
@@ -130,7 +131,29 @@ const styles = {
   }
 }
 
-export default class ChatBubble extends React.Component {
+interface ChatBubbleProps {
+  message: Message,
+  previous,
+  next,
+  user,
+  renderAvatarOnTop,
+  showAvatarForEveryMessage,
+  showUserAvatar,
+  showReceipientAvatar,
+  avatarSize,
+  onPressAvatar,
+  onPressBubble,
+  timezone,
+  timeFormat,
+  dateFormat,
+  textStyle,
+  imageStyle,
+  timeStyle,
+  dateStyle,
+  tickStyle
+}
+
+export default class ChatBubble extends React.Component<ChatBubbleProps> {
   renderAvatar(user, avatarSize, renderAvatarOnTop, onPressAvatar) {
     const avatarStyle = Object.assign(
       {
@@ -145,12 +168,12 @@ export default class ChatBubble extends React.Component {
         color: '#FFFFFF'
       },
       generateEmptyAvatarStyle(avatarSize)
-    )
+    ) as CSSProperties
     if (onPressAvatar != null) {
       avatarStyle.cursor = 'pointer'
     }
 
-    const wrapperStyle = Object.assign({}, styles.avatarWrapper, renderAvatarOnTop ? styles.avatarWrapperTop : {})
+    const wrapperStyle = Object.assign({}, styles.avatarWrapper, renderAvatarOnTop ? styles.avatarWrapperTop : {}) as CSSProperties
     return (
       <div
         id={`user_avatar_${user._id}`}
@@ -222,7 +245,7 @@ export default class ChatBubble extends React.Component {
     const tickStyleToUse = Object.assign({}, styles.tick, tickStyle)
     const textContent = message.text.split('\n')
     const timeDisplay = <p style={timeStyleToUse}>{messageDate.format(timeFormat)}</p>
-    let Status = null
+    let Status = ()=><></>
     if (message.received === true) {
       Status = DoubleCheck
     } else if (message.sent === true) {
@@ -238,14 +261,14 @@ export default class ChatBubble extends React.Component {
     return (
       <div id={`chat_row_wrapper_${message._id}`}>
         {displayDate && (
-          <div style={styles.dateRow}>
+          <div style={styles.dateRow as CSSProperties}>
             <p style={dateStyleToUse}>{messageDate.format(dateFormat)}</p>
           </div>
         )}
         {isSystemMessage && (
-          <div style={styles.systemMessageRow} id={`chat_system_${message._id}`}>
+          <div style={styles.systemMessageRow as CSSProperties} id={`chat_system_${message._id}`}>
             {textContent.map((text, i) => {
-              const key = `system_${message.id}_para_${i}`
+              const key = `system_${message._id}_para_${i}`
               if (text.length === 0) {
                 return <br key={key} />
               }
@@ -255,26 +278,26 @@ export default class ChatBubble extends React.Component {
           </div>
         )}
         {!isSystemMessage && (
-          <div style={styles.chatbubbleRow} id={`chat_row_${message._id}`} onClick={onMessageClick}>
+          <div style={styles.chatbubbleRow as CSSProperties} id={`chat_row_${message._id}`} onClick={onMessageClick}>
             {!sentByMe && showAvatar ? this.renderAvatar(message.user, avatarSize, renderAvatarOnTop, onPressAvatar) : emptyAvatar}
-            <div style={chatbubbleWrapperStyles}>
-              <div style={chatbubbleStyles} id={`chat_bubble_${message._id}`}>
+            <div style={chatbubbleWrapperStyles as CSSProperties}>
+              <div style={chatbubbleStyles as CSSProperties} id={`chat_bubble_${message._id}`}>
                 {message.image != null && <img src={message.image} style={imageStyleToUse} />}
                 {message.video != null && (
-                  <video controls="controls">
+                  <video controls>
                     Your browser does not support the &lt;video&gt; tag.
                     <source src={message.video} />
                   </video>
                 )}
                 {message.audio != null && (
-                  <audio controls="controls">
+                  <audio controls>
                     Your browser does not support the &lt;audio&gt; tag.
                     <source src={message.audio} />
                   </audio>
                 )}
                 <Linkify properties={{ style: styles.a, target: '_blank' }}>
                   {textContent.map((text, i) => {
-                    const key = `bubble_${message.id}_para_${i}`
+                    const key = `bubble_${message._id}_para_${i}`
                     if (text.length === 0) {
                       return <br key={key} />
                     }
