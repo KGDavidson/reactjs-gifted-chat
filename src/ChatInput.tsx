@@ -65,7 +65,6 @@ export default class ChatInput extends React.Component<ChatInputProps, {message}
     renderSend: (args: RenderSendProps) => <button id="chat_input_send_button" type="submit" key={args.key} style={args.style} onClick={args.onClick} disabled={args.disabled}>{args.children}</button>,
     renderInputToolbar: (args: RenderInputToolbarProps) => <div className="chat-input" style={args.style}>{args.children}</div>
   }
-  
 
   constructor(props) {
     super(props)
@@ -111,6 +110,7 @@ export default class ChatInput extends React.Component<ChatInputProps, {message}
     const inputStyle = Object.assign({}, styles.inputStyle, textInputStyle)
     const buttonDisabled = !alwaysShowSend && messageToUse.trim().length === 0
     const buttonStyle = Object.assign({}, styles.sendButton, sendButtonStyle, buttonDisabled ? sendButtonDisabledStyle : {})
+
     const renderComposerProps: RenderComposerProps = {
       key: "renderComposer",
       value: messageToUse,

@@ -101,8 +101,6 @@ export default class GiftedChat extends Component<GiftedChatProps> {
     isLoadingEarlier: false,
     isTyping: false,
     alwaysShowSend: false,
-    renderSend: null,
-    renderComposer: null,
     textInputStyle: {},
     placeholder: 'Enter your message',
     renderAvatarOnTop: false,
