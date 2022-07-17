@@ -1,6 +1,6 @@
 import React, {Component, CSSProperties, createRef} from 'react'
 import ChatBubble from './ChatBubble'
-import ChatInput from './ChatInput'
+import ChatInput, { RenderComposerProps, RenderInputToolbarProps, RenderSendProps } from './ChatInput'
 import { v4 as uuidv4 } from 'uuid'
 import moment from 'moment-timezone'
 import './loader.css'
@@ -73,29 +73,12 @@ interface GiftedChatProps {
   hasInputField: boolean,
   onSend: (message)=>void,
   alwaysShowSend: boolean,
-  renderSend: (args: {
-    style: {},
-    onClick: (e)=>void,
-    disabled: boolean,
-    children: string | JSX.Element | JSX.Element[]
-  })=> JSX.Element,
+  renderSend: (args: RenderSendProps)=> JSX.Element,
   placeholder: string,
   text: string,
   onInputTextChanged: (e)=>void,
-  renderComposer: (args: {
-    value: string,
-    onChange: (e) => void,
-    onKeyUp: (e)=>void,
-    placeholder: string,
-    maxLength: number,
-    style: {}
-  })=> JSX.Element,
-  renderInputToolbar: (
-    args: {
-      style: {},
-    },
-    children: JSX.Element[] | JSX.Element | string
-  )=>JSX.Element,
+  renderComposer: (args: RenderComposerProps)=> JSX.Element,
+  renderInputToolbar: (args: RenderInputToolbarProps)=>JSX.Element,
   textInputStyle: {},
   sendButtonStyle: {},
   sendButtonDisabledStyle: {},

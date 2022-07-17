@@ -21,29 +21,34 @@ const styles = {
   }
 }
 
+export interface RenderSendProps {
+  key: string,
+  style: {},
+  onClick: (e)=>void,
+  disabled: boolean,
+  children: string | JSX.Element | JSX.Element[]
+}
+
+export interface RenderInputToolbarProps {
+  style: {},
+  children: JSX.Element[] | JSX.Element | string
+}
+
+export interface RenderComposerProps {
+  key: string,
+  value: string,
+  style: {},
+  placeholder: string,
+  maxLength: number,
+  onChange: (e) => void,
+  onKeyUp: (e)=>void
+}
 
 interface ChatInputProps {
-  renderSend: (args: {
-    style: {},
-    onClick: (e)=>void,
-    disabled: boolean,
-    children: string | JSX.Element | JSX.Element[]
-})=> JSX.Element,
+  renderSend: (args: RenderSendProps)=> JSX.Element,
   placeholder: string,
-  renderComposer: (args: {
-    value: string,
-    style: {},
-    placeholder: string,
-    maxLength: number,
-    onChange: (e) => void,
-    onKeyUp: (e)=>void,
-  }) => JSX.Element,
-  renderInputToolbar: (
-    args: {
-      style: {},
-    },
-    children: JSX.Element[] | JSX.Element | string
-  ) => JSX.Element
+  renderComposer: (args: RenderComposerProps) => JSX.Element,
+  renderInputToolbar: (args: RenderInputToolbarProps) => JSX.Element
   textInputStyle: {},
   text: string,
   onInputTextChanged: (e)=>void,
@@ -56,9 +61,9 @@ interface ChatInputProps {
 
 export default class ChatInput extends React.Component<ChatInputProps, {message}> {
   static defaultProps = {
-    renderComposer: (renderComposerProps) => <textarea {...renderComposerProps}/>,
-    renderSend: (sendButtonProps) => <button id="chat_input_send_button" type="submit" {...sendButtonProps}/>,
-    renderInputToolbar: (renderInputToolbarProps, children) => <div className="chat-input" {...renderInputToolbarProps}>{children}</div>
+    renderComposer: (args: RenderComposerProps) => <textarea key={args.key} value={args.value} maxLength={args.maxLength} onChange={args.onChange} onKeyUp={args.onKeyUp} placeholder={args.placeholder} style={args.style} />,
+    renderSend: (args: RenderSendProps) => <button id="chat_input_send_button" type="submit" key={args.key} style={args.style} onClick={args.onClick} disabled={args.disabled}>{args.children}</button>,
+    renderInputToolbar: (args: RenderInputToolbarProps) => <div className="chat-input" style={args.style}>{args.children}</div>
   }
   
 
@@ -106,7 +111,7 @@ export default class ChatInput extends React.Component<ChatInputProps, {message}
     const inputStyle = Object.assign({}, styles.inputStyle, textInputStyle)
     const buttonDisabled = !alwaysShowSend && messageToUse.trim().length === 0
     const buttonStyle = Object.assign({}, styles.sendButton, sendButtonStyle, buttonDisabled ? sendButtonDisabledStyle : {})
-    const renderComposerProps = {
+    const renderComposerProps: RenderComposerProps = {
       key: "renderComposer",
       value: messageToUse,
       onChange: event => {
@@ -121,22 +126,22 @@ export default class ChatInput extends React.Component<ChatInputProps, {message}
       maxLength: maxInputLength,
       style: inputStyle
     }
-    const sendButtonProps = {
+    const sendButtonProps: RenderSendProps = {
       key: "renderSend",
       style: buttonStyle,
       onClick: this.onSend,
       disabled: buttonDisabled,
       children: 'Send'
     }
-    const renderInputToolbarProps = {
-      style: styles.chatInput
+    const renderInputToolbarProps: RenderInputToolbarProps = {
+      style: styles.chatInput,
+      children: [
+        renderComposer(renderComposerProps),
+        renderSend(sendButtonProps)
+      ]
     }
     return renderInputToolbar(
         renderInputToolbarProps,
-        [
-          renderSend(sendButtonProps),
-          renderComposer(renderComposerProps)
-        ]
       )
     
   }
