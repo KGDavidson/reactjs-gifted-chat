@@ -1,5 +1,5 @@
 import React, {Component, CSSProperties, createRef} from 'react'
-import ChatBubble, { RenderBubbleProps, RenderMessageProps } from './ChatBubble'
+import ChatBubble, { RenderBubbleProps, RenderMessageProps, RenderMessageTextProps } from './ChatBubble'
 import ChatInput, { RenderComposerProps, RenderInputToolbarProps, RenderSendProps } from './ChatInput'
 import { v4 as uuidv4 } from 'uuid'
 import moment from 'moment-timezone'
@@ -78,6 +78,7 @@ interface GiftedChatProps {
   renderInputToolbar: (args: RenderInputToolbarProps)=>JSX.Element,
   renderMessage: (args: RenderMessageProps)=>JSX.Element,
   renderBubble: (args: RenderBubbleProps)=>JSX.Element,
+  renderMessageText: (args: RenderMessageTextProps)=>JSX.Element,
   placeholder: string,
   text: string,
   onInputTextChanged: (e)=>void,
@@ -177,7 +178,9 @@ export default class GiftedChat extends Component<GiftedChatProps> {
       timeStyle,
       dateStyle,
       tickStyle,
-      renderMessage
+      renderMessage,
+      renderBubble,
+      renderMessageText
     } = this.props
 
     const messageNodes: JSX.Element[] = []
@@ -203,6 +206,8 @@ export default class GiftedChat extends Component<GiftedChatProps> {
           previous={prev}
           next={next}
           user={user}
+          renderBubble={renderBubble}
+          renderMessageText={renderMessageText}
           renderAvatarOnTop={renderAvatarOnTop}
           showAvatarForEveryMessage={showAvatarForEveryMessage}
           showUserAvatar={showUserAvatar}

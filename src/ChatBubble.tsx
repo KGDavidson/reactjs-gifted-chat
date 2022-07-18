@@ -17,6 +17,12 @@ export interface RenderAvatarProps {
   onPressAvatar: (e) => void
 }
 
+export interface RenderMessageTextProps {
+  message: Message
+  textContent: string[],
+  textStyle: {}
+}
+
 export interface RenderBubbleProps {
   message: Message,
   onMessageClick: (e)=>void,
@@ -162,6 +168,7 @@ interface ChatBubbleProps {
   message: Message,
   renderMessage: (args: RenderMessageProps)=>JSX.Element,
   renderBubble: (args: RenderBubbleProps)=>JSX.Element,
+  renderMessageText: (args: RenderMessageTextProps)=>JSX.Element,
   previous,
   next,
   user: User,
@@ -209,6 +216,17 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
           }) : args.emptyAvatar}
         </div>
       </div>
+    ),
+    renderMessageText: (args: RenderMessageTextProps) => (
+      <Linkify properties={{ style: styles.a, target: '_blank' }}>
+        {args.textContent.map((text, i) => {
+          const key = `bubble_${args.message._id}_para_${i}`
+          if (text.length === 0) {
+            return <br key={key} />
+          }
+          return <p key={key} style={args.textStyle}>{text}</p>
+        })}
+      </Linkify>
     )
   }
 
@@ -276,6 +294,7 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
       tickStyle,
       renderMessage,
       renderBubble,
+      renderMessageText,
     } = this.props
     const sentByMe = message.user._id === user._id
     const chatbubbleStyles = Object.assign({}, styles.chatbubble, sentByMe ? {} : styles.recipientChatbubble)
@@ -319,6 +338,12 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
       }
     }
 
+    const renderMessageTextProps = {
+      message,
+      textContent,
+      textStyle: textStyleToUse
+    }
+
     const renderBubbleProps = {
       message,
       onMessageClick,
@@ -345,15 +370,7 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
             <source src={message.audio} />
           </audio>
         ),
-        <Linkify properties={{ style: styles.a, target: '_blank' }}>
-          {textContent.map((text, i) => {
-            const key = `bubble_${message._id}_para_${i}`
-            if (text.length === 0) {
-              return <br key={key} />
-            }
-            return <p key={key} style={textStyleToUse}>{text}</p>
-          })}
-        </Linkify>,
+        renderMessageText(renderMessageTextProps),
         <div style={{ display: 'flex', flexDirection: 'row' }}>
           {timeDisplay}
           {Status != null && (
@@ -387,38 +404,6 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
         )),
         (!isSystemMessage && (
           renderBubble(renderBubbleProps)
-          /*
-                {message.image != null && <img src={message.image} style={imageStyleToUse} />}
-                {message.video != null && (
-                  <video controls>
-                    Your browser does not support the &lt;video&gt; tag.
-                    <source src={message.video} />
-                  </video>
-                )}
-                {message.audio != null && (
-                  <audio controls>
-                    Your browser does not support the &lt;audio&gt; tag.
-                    <source src={message.audio} />
-                  </audio>
-                )}
-                <Linkify properties={{ style: styles.a, target: '_blank' }}>
-                  {textContent.map((text, i) => {
-                    const key = `bubble_${message._id}_para_${i}`
-                    if (text.length === 0) {
-                      return <br key={key} />
-                    }
-                    return <p key={key} style={textStyleToUse}>{text}</p>
-                  })}
-                </Linkify>
-                <div style={{ display: 'flex', flexDirection: 'row' }}>
-                  {timeDisplay}
-                  {Status != null && (
-                    <div style={tickStyleToUse}>
-                      <Status />
-                    </div>
-                  )}
-                </div>
-                */
         ))
       ]
     }
