@@ -3,7 +3,34 @@ import Linkify from 'react-linkify'
 import initials from 'initials'
 import moment from 'moment-timezone'
 import { get } from 'lodash'
-import { Message } from '.'
+import { Message, User } from '.'
+
+export interface RenderMessageProps {
+  message: Message,
+  children: (string | JSX.Element | false | undefined)[]
+}
+
+export interface RenderAvatarProps {
+  user: User, 
+  avatarSize: number, 
+  renderAvatarOnTop: boolean, 
+  onPressAvatar: (e) => void
+}
+
+export interface RenderBubbleProps {
+  message: Message,
+  onMessageClick: (e)=>void,
+  sentByMe: boolean,
+  showAvatar: boolean,
+  avatarSize: number,
+  renderAvatarOnTop: boolean,
+  onPressAvatar: (e)=>void,
+  emptyAvatar: JSX.Element | null,
+  children: (string | JSX.Element | false | undefined)[],
+  chatbubbleStyles: {},
+  chatbubbleWrapperStyles: {}
+  renderAvatar: (args: RenderAvatarProps) => JSX.Element,
+}
 
 function Check() {
   return (
@@ -133,9 +160,11 @@ const styles = {
 
 interface ChatBubbleProps {
   message: Message,
+  renderMessage: (args: RenderMessageProps)=>JSX.Element,
+  renderBubble: (args: RenderBubbleProps)=>JSX.Element,
   previous,
   next,
-  user,
+  user: User,
   renderAvatarOnTop,
   showAvatarForEveryMessage,
   showUserAvatar,
@@ -154,42 +183,71 @@ interface ChatBubbleProps {
 }
 
 export default class ChatBubble extends React.Component<ChatBubbleProps> {
-  renderAvatar(user, avatarSize, renderAvatarOnTop, onPressAvatar) {
+  static defaultProps = {
+    renderMessage: (args: RenderMessageProps) => (
+      <div id={`chat_row_wrapper_${args.message._id}`}>
+        {args.children}
+      </div>
+    ),
+    renderBubble: (args: RenderBubbleProps) => (
+      <div style={styles.chatbubbleRow as CSSProperties} id={`chat_row_${args.message._id}`} onClick={args.onMessageClick}>
+        {!args.sentByMe && args.showAvatar ? args.renderAvatar({
+          user: args.message.user, 
+          avatarSize: args.avatarSize, 
+          renderAvatarOnTop: args.renderAvatarOnTop, 
+          onPressAvatar: args.onPressAvatar
+          }) : args.emptyAvatar}
+        <div style={args.chatbubbleWrapperStyles as CSSProperties}>
+          <div style={args.chatbubbleStyles as CSSProperties} id={`chat_bubble_${args.message._id}`}>
+            {args.children}
+          </div>
+          {args.sentByMe && args.showAvatar ? args.renderAvatar({
+            user: args.message.user, 
+            avatarSize: args.avatarSize, 
+            renderAvatarOnTop: args.renderAvatarOnTop, 
+            onPressAvatar: args.onPressAvatar
+          }) : args.emptyAvatar}
+        </div>
+      </div>
+    )
+  }
+
+  renderAvatar(args: RenderAvatarProps) {
     const avatarStyle = Object.assign(
       {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         margin: 2,
-        borderRadius: avatarSize / 2,
-        fontSize: avatarSize / 3,
+        borderRadius: args.avatarSize / 2,
+        fontSize: args.avatarSize / 3,
         fontWeight: '600',
-        backgroundColor: stringToHslColor(user.name, 50, 80),
+        backgroundColor: stringToHslColor(args.user.name, 50, 80),
         color: '#FFFFFF'
       },
-      generateEmptyAvatarStyle(avatarSize)
+      generateEmptyAvatarStyle(args.avatarSize)
     ) as CSSProperties
-    if (onPressAvatar != null) {
+    if (args.onPressAvatar != null) {
       avatarStyle.cursor = 'pointer'
     }
 
-    const wrapperStyle = Object.assign({}, styles.avatarWrapper, renderAvatarOnTop ? styles.avatarWrapperTop : {}) as CSSProperties
+    const wrapperStyle = Object.assign({}, styles.avatarWrapper, args.renderAvatarOnTop ? styles.avatarWrapperTop : {}) as CSSProperties
     return (
       <div
-        id={`user_avatar_${user._id}`}
+        id={`user_avatar_${args.user._id}`}
         style={wrapperStyle}
         onClick={() => {
-          if (onPressAvatar != null) {
-            onPressAvatar(user)
+          if (args.onPressAvatar != null) {
+            args.onPressAvatar(args.user)
           }
         }}
       >
-        {user.avatar != null
+        {args.user.avatar != null
           ? (
-          <img style={avatarStyle} src={user.avatar} alt={user.name} />
+          <img style={avatarStyle} src={args.user.avatar} alt={args.user.name} />
             )
           : (
-          <div style={avatarStyle}>{initials(user.name)}</div>
+          <div style={avatarStyle}>{initials(args.user.name || "")}</div>
             )}
       </div>
     )
@@ -215,7 +273,9 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
       imageStyle,
       timeStyle,
       dateStyle,
-      tickStyle
+      tickStyle,
+      renderMessage,
+      renderBubble,
     } = this.props
     const sentByMe = message.user._id === user._id
     const chatbubbleStyles = Object.assign({}, styles.chatbubble, sentByMe ? {} : styles.recipientChatbubble)
@@ -258,14 +318,62 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
         onPressBubble(message)
       }
     }
-    return (
-      <div id={`chat_row_wrapper_${message._id}`}>
-        {displayDate && (
+
+    const renderBubbleProps = {
+      message,
+      onMessageClick,
+      showAvatar,
+      sentByMe,
+      avatarSize,
+      renderAvatarOnTop,
+      onPressAvatar,
+      emptyAvatar,
+      renderAvatar: this.renderAvatar,
+      chatbubbleWrapperStyles,
+      chatbubbleStyles,
+      children: [
+        message.image != null && <img src={message.image} style={imageStyleToUse} />,
+        message.video != null && (
+          <video controls>
+            Your browser does not support the &lt;video&gt; tag.
+            <source src={message.video} />
+          </video>
+        ),
+        message.audio != null && (
+          <audio controls>
+            Your browser does not support the &lt;audio&gt; tag.
+            <source src={message.audio} />
+          </audio>
+        ),
+        <Linkify properties={{ style: styles.a, target: '_blank' }}>
+          {textContent.map((text, i) => {
+            const key = `bubble_${message._id}_para_${i}`
+            if (text.length === 0) {
+              return <br key={key} />
+            }
+            return <p key={key} style={textStyleToUse}>{text}</p>
+          })}
+        </Linkify>,
+        <div style={{ display: 'flex', flexDirection: 'row' }}>
+          {timeDisplay}
+          {Status != null && (
+            <div style={tickStyleToUse}>
+              <Status />
+            </div>
+          )}
+        </div>
+      ]
+    }
+
+    const renderMessageProps = {
+      message,
+      children: [
+        (displayDate && (
           <div style={styles.dateRow as CSSProperties}>
             <p style={dateStyleToUse}>{messageDate.format(dateFormat)}</p>
           </div>
-        )}
-        {isSystemMessage && (
+        )),
+        (isSystemMessage && (
           <div style={styles.systemMessageRow as CSSProperties} id={`chat_system_${message._id}`}>
             {textContent.map((text, i) => {
               const key = `system_${message._id}_para_${i}`
@@ -276,12 +384,10 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
             })}
             {timeDisplay}
           </div>
-        )}
-        {!isSystemMessage && (
-          <div style={styles.chatbubbleRow as CSSProperties} id={`chat_row_${message._id}`} onClick={onMessageClick}>
-            {!sentByMe && showAvatar ? this.renderAvatar(message.user, avatarSize, renderAvatarOnTop, onPressAvatar) : emptyAvatar}
-            <div style={chatbubbleWrapperStyles as CSSProperties}>
-              <div style={chatbubbleStyles as CSSProperties} id={`chat_bubble_${message._id}`}>
+        )),
+        (!isSystemMessage && (
+          renderBubble(renderBubbleProps)
+          /*
                 {message.image != null && <img src={message.image} style={imageStyleToUse} />}
                 {message.video != null && (
                   <video controls>
@@ -312,12 +418,13 @@ export default class ChatBubble extends React.Component<ChatBubbleProps> {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-            {sentByMe && showAvatar ? this.renderAvatar(message.user, avatarSize, renderAvatarOnTop, onPressAvatar) : emptyAvatar}
-          </div>
-        )}
-      </div>
+                */
+        ))
+      ]
+    }
+
+    return (
+      renderMessage(renderMessageProps)
     )
   }
 }
