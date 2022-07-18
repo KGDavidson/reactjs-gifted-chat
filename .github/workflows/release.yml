@@ -1,0 +1,33 @@
+name: release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['16.15.0']
+    container: blowltd/docker-ci:node-${{ matrix.node }}
+    env:
+      CI: true
+      TOKEN_GITHUB_CI: ${{ secrets.TOKEN_GITHUB_CI }}
+    steps:
+    - uses: actions/checkout@v1
+    - name: install dependencies
+      run: |
+        echo "//npm.pkg.github.com/:_authToken=${TOKEN_GITHUB_CI}" >> .npmrc
+        echo "@blowltd:registry=https://npm.pkg.github.com" >> .npmrc
+        echo "always-auth=true" >> .npmrc
+        yarn install --frozen-lockfile
+    - name: build
+      run: yarn run build
+    - name: publish
+      working-directory: ./package
+      run: |
+        echo "//npm.pkg.github.com/:_authToken=${TOKEN_GITHUB_CI}" > .npmrc
+        echo "@blowltd:registry=https://npm.pkg.github.com" >> .npmrc
+        echo "always-auth=true" >> .npmrc
+        yarn publish
