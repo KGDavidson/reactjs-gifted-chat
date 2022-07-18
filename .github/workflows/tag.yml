@@ -18,6 +18,7 @@ jobs:
           ref: main
       - name: prepare repository
         run: |
+          git config --global --add safe.directory /__w/reactjs-gifted-chat/reactjs-gifted-chat
           git checkout main
           git remote set-url origin https://github.com/${GITHUB_REPOSITORY}.git
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
